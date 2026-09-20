@@ -12,6 +12,7 @@ from . import db, config
 from .adapters.pdf_watcher import PdfWatcherAdapter
 from .fetch import fetch_new_documents
 from .extract import extract_fetched_documents
+from .scan import scan_extracted_documents
 
 
 def cmd_initdb(args):
@@ -307,6 +308,13 @@ def cmd_extract(args):
     print(f"\nExtraction complete: {native} native, {ocr} OCR, {errors} errors")
 
 
+def cmd_scan(args):
+    """Scan extracted documents for keyword hits."""
+    print("Scanning extracted documents for keyword hits...")
+    docs_scanned, total_hits = scan_extracted_documents()
+    print(f"\nScan complete: {docs_scanned} documents scanned, {total_hits} total hits")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -331,6 +339,9 @@ def main():
     # extract command
     subparsers.add_parser("extract", help="Extract text from fetched documents")
 
+    # scan command
+    subparsers.add_parser("scan", help="Scan extracted documents for keyword hits")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
@@ -343,6 +354,8 @@ def main():
         cmd_fetch(args)
     elif args.command == "extract":
         cmd_extract(args)
+    elif args.command == "scan":
+        cmd_scan(args)
 
 
 if __name__ == "__main__":
