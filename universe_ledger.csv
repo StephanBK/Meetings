@@ -1,0 +1,23 @@
+segment,registry,universe_count,count_is,loaded,in_pilot,level1_plus,level3_plus,level5_plus,pct_level3,note
+LI school districts,NCES federal district directory 2023-24,125,exact from registry,yes,yes,124,103,0,82.4,"Census of Governments counts 124, NCES counts 125. NCES used"
+LI BOCES,NCES federal district directory 2023-24,3,exact from registry,yes,yes,3,3,0,100.0,
+LI charter schools,NCES federal district directory 2023-24,6,exact from registry,yes,yes,6,4,0,66.7,
+NYC Council bodies,legistar.council.nyc.gov department list,59,exact from registry,yes,yes,59,59,0,100.0,One API token unlocks all 59
+NYC community boards,NYC Open Data ruf7-3wgc,59,exact from registry,yes,yes,58,0,0,0.0,
+NYC education councils,Built by rule: 32 districts + 4 citywide + PEP,37,exact from registry,yes,yes,0,0,0,0.0,
+NYC charter school boards,NCES federal district directory 2023-24,277,exact from registry,yes,yes,271,0,0,0.0,277 entries but 165 distinct websites. Networks share one board. Dedupe needed
+NYC local authorities / LDCs,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",24,exact from registry,yes,yes,0,0,0,0.0,
+NY State authorities,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",45,exact from registry,yes,yes,0,0,0,0.0,
+LI local authorities / IDAs / LDCs,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",43,exact from registry,yes,"no, ledger only",0,0,0,0.0,
+NYC housing authority,HUD PHA registry,1,exact from registry,yes,yes,1,0,0,0.0,
+LI counties,Census of Governments 2022 unit file,2,exact from registry,yes,"no, ledger only",2,0,0,0.0,
+LI cities,Census of Governments 2022 unit file,2,exact from registry,yes,"no, ledger only",2,0,0,0.0,
+LI towns,Census of Governments 2022 unit file,13,exact from registry,yes,"no, ledger only",12,0,0,0.0,
+LI villages,Census of Governments 2022 unit file,96,exact from registry,yes,"no, ledger only",70,0,0,0.0,
+LI fire districts,Census of Governments 2022 unit file,131,exact from registry,yes,"no, ledger only",47,0,0,0.0,
+LI library districts,Census of Governments 2022 unit file,75,exact from registry,yes,"no, ledger only",69,0,0,0.0,
+LI water and other special districts,Census of Governments 2022 unit file,4,exact from registry,yes,"no, ledger only",3,0,0,0.0,
+LI housing authorities,HUD PHA registry,24,exact from registry,yes,"no, ledger only",0,0,0,0.0,Many are Section 8 voucher only and own no buildings. Program type and HUD capital fund are in manual_notes
+"NYC city boards and commissions (CUNY trustees, Landmarks, City Planning, BSA, borough boards, 3 library systems)","NYC Green Book, not loaded",~40,estimate,no,yes,0,0,0,0,"Known to exist, registry not loaded yet"
+Bi-state (Port Authority of NY and NJ),"none, add by hand",1,exact,no,yes,0,0,0,0,
+"LI public colleges (Nassau CC, Suffolk CC, SUNY campuses)","SUNY campus list, not loaded",~6,estimate,no,"no, ledger only",0,0,0,0,

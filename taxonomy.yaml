@@ -1,0 +1,173 @@
+# Meetings: signal taxonomy v0.2 (2026-09-20)
+# v0.2 changes come from a smoke test on 6 real Long Island documents (Commack, Deer Park, West Islip).
+# Purpose: one controlled vocabulary shared by the free keyword scan and the LLM classifier.
+# How it is used:
+#   1. Keyword scan: a document is a "hit" if it matches any trade keyword OR any trigger keyword,
+#      and the match is not cancelled by a negative phrase.
+#   2. LLM classifier: reads the text around each hit and fills the output_schema at the bottom.
+# Matching rules: case-insensitive, whole words, plural forms included. Phrases match as written.
+# Status: DRAFT. Smoke tested on 6 documents only. Calibration will add and remove terms.
+
+version: 0.2
+
+# ---------------------------------------------------------------------------
+# DIMENSION 1: TRADE (what kind of work)
+# ---------------------------------------------------------------------------
+trades:
+  envelope_windows:
+    label: "Windows, glazing, building envelope"
+    keywords: [window, windows, glazing, curtain wall, storefront, fenestration, skylight,
+               facade, building envelope, exterior envelope, masonry, repointing, pointing,
+               lintel, caulking, weatherization, exterior doors, window replacement, storm window]
+  hvac_mechanical:
+    label: "HVAC and mechanical"
+    keywords: [hvac, boiler, chiller, cooling tower, air handler, ahu, rooftop unit, rtu,
+               unit ventilator, univent, ventilation, air conditioning, heat pump, geothermal,
+               vrf, ductwork, building management system, bms, controls upgrade, steam trap,
+               burner, hot water heater, mechanical upgrade, heating, cooling, heating and cooling]
+  electrical_lighting:
+    label: "Electrical and lighting"
+    keywords: [electrical upgrade, switchgear, transformer, panelboard, electrical service,
+               generator, emergency generator, led lighting, lighting retrofit, lighting upgrade,
+               field lighting, fire alarm, public address, clock system, ev charger, ev charging,
+               electric upgrade, electric service, pseg]
+  roofing:
+    label: "Roofing"
+    keywords: [roof, roofing, reroof, roof replacement, roof repair, roof leak, membrane, flashing, parapet]
+  plumbing:
+    label: "Plumbing and water"
+    keywords: [plumbing, water main, sanitary, sewer line, domestic water, backflow, lead in water,
+               water fountain, bottle filler, bathroom renovation, restroom renovation, toilet room]
+  life_safety_security:
+    label: "Fire, life safety, security"
+    keywords: [sprinkler, fire suppression, security vestibule, access control, door hardening,
+               security camera, surveillance, lockdown, intercom, visitor management, ada, elevator, lift]
+  abatement:
+    label: "Asbestos, lead, environmental"
+    keywords: [asbestos, abatement, acm, lead paint, mold, remediation, indoor air quality, iaq,
+               underground storage tank, oil tank]
+  energy:
+    label: "Energy, solar, performance contracts"
+    keywords: [energy performance contract, epc, esco, energy audit, solar, photovoltaic, pv array,
+               battery storage, benchmarking, decarbonization, electrification, nyserda, nypa,
+               clean energy, energy savings]
+  site_athletics:
+    label: "Site work, paving, athletic fields"
+    keywords: [paving, parking lot, asphalt, sidewalk, curb, drainage, synthetic turf, turf field,
+               track resurfacing, tennis court, bleacher, playground, fencing]
+  interiors:
+    label: "Interiors and finishes"
+    keywords: [flooring, floor replacement, gym floor, ceiling, ceiling tile, painting, casework,
+               locker, auditorium seating, science lab renovation, classroom renovation, kitchen equipment]
+  general_construction:
+    label: "General construction (trade not stated)"
+    keywords: [construction project, under construction, construction has begun, pool construction,
+               renovation, renovation project, reconstruction, rehabilitation, building addition,
+               summer projects, summer work, concession, command center]
+  maintenance_services:
+    label: "Recurring maintenance and service contracts"
+    keywords: [service contract, maintenance contract, maintenance agreement, preventive maintenance,
+               custodial, janitorial, cleaning services, pest control, elevator maintenance,
+               hvac maintenance, generator maintenance, fire alarm inspection, snow removal, landscaping,
+               cooperative bid, piggyback, requirements contract]
+
+# ---------------------------------------------------------------------------
+# DIMENSION 2: STAGE (how early we caught it). Lower number = earlier = more valuable.
+# ---------------------------------------------------------------------------
+stages:
+  1_problem:
+    label: "Problem mentioned"
+    value: "Earliest. Nobody else is watching yet."
+    keywords: [leak, leaking, failed, failure, beyond useful life, end of life, inoperable, deteriorated,
+               emergency repair, emergency project, complaint, too hot, too cold, no heat, no air conditioning,
+               health and safety, condemned, water damage]
+  2_study:
+    label: "Study or assessment"
+    value: "Need is documented. Scope and budget are forming."
+    keywords: [building condition survey, bcs, five-year capital plan, five year capital facilities plan,
+               long-range facilities plan, facilities assessment, facilities master plan, feasibility study,
+               energy audit, annual visual inspection, facilities committee, capital planning]
+  3_funding:
+    label: "Funding action"
+    value: "Money is being lined up. Project is now likely."
+    keywords: [bond, bond proposition, bond referendum, capital reserve, capital reserve fund,
+               establish a reserve, transfer to capital, capital project, capital improvement,
+               grant award, state aid, building aid, smart schools bond act, tax anticipation,
+               bond anticipation note, ban, appropriation]
+  4_design:
+    label: "Design and approvals"
+    value: "Specs are being written. Last chance to be named in the spec."
+    keywords: [architect, architect of record, engineering services, construction manager,
+               construction management services, schematic design, design development,
+               construction documents, seqra, type ii action, negative declaration,
+               sed approval, state education department approval, office of facilities planning,
+               letter of intent, plans and specifications]
+  5_bid:
+    label: "Bid or RFP out"
+    value: "Public. Every bid service already has it."
+    keywords: [request for proposals, rfp, rfq, invitation to bid, advertise for bids, bid opening,
+               notice to bidders, sealed bids, pre-bid]
+  6_award:
+    label: "Contract award"
+    value: "Too late for the prime. Useful for subs, suppliers and competitor pricing."
+    keywords: [award of bid, award the contract, lowest responsible bidder, bid award, bid tabulation,
+               hereby awards, contract award, rejected all bids, rebid]
+  7_construction:
+    label: "Under construction"
+    value: "Change orders show scope growth and who is on site."
+    keywords: [change order, payment application, application for payment, substantial completion,
+               punch list, construction update, certificate of occupancy]
+
+# ---------------------------------------------------------------------------
+# TRIGGERS: trade-agnostic words that make a document worth reading even with no trade keyword
+# ---------------------------------------------------------------------------
+triggers: [bond project, capital fund, capital reserve, grant disbursement, capital project, capital improvement, bond proposition, building condition survey,
+           five-year capital plan, energy performance contract, emergency project, seqra,
+           facilities committee, buildings and grounds, change order, award of bid]
+
+# ---------------------------------------------------------------------------
+# NEGATIVE PHRASES: cancel a keyword match when they appear in the same sentence
+# ---------------------------------------------------------------------------
+negatives: ["window of opportunity", "microsoft windows", "windows 10", "windows 11", "time window",
+            "boilerplate", "boiler plate", "performance bond", "bid bond", "bonding with",
+            "roof of the", "through the roof", "electric bus", "track and field team", "track team",
+            "field trip", "lighting ceremony", "tree lighting", "security deposit", "social security",
+            "chromebook", "solar system", "current events", "mold the", "lead teacher", "lead role",
+            "lead agency", "bond, schoeneck" ]
+# Note: "lead agency" is a SEQRA term. It is listed here only to stop a false "lead paint" hit.
+# The SEQRA trigger still fires on its own.
+
+# ---------------------------------------------------------------------------
+# SKIP PATTERNS: a passage matching any of these is a personnel line or a known non-project topic. Skip it.
+# (Smoke test: personnel appointments caused 4 of 6 false hits.)
+# ---------------------------------------------------------------------------
+skip_patterns: ["Salary/Step", "Position:", "Effective Date", "Step \\d+", "replacing .{0,40}retired", "leave of absence", "probationary", "weed control", "pesticide"]
+
+# ---------------------------------------------------------------------------
+# DOCUMENT TYPES: where signals live, ranked by typical richness
+# ---------------------------------------------------------------------------
+document_types:
+  - {type: agenda_packet,            richness: 5, note: "Staff reports, quotes, scopes, bid tabs"}
+  - {type: facilities_committee,     richness: 5, note: "Problems discussed months before the board votes"}
+  - {type: bond_or_budget_deck,      richness: 5, note: "Full project lists with dollar amounts per building"}
+  - {type: building_condition_survey,richness: 5, note: "NY schools file one every 5 years. Item-level needs with cost estimates"}
+  - {type: minutes,                  richness: 3, note: "Resolutions with names and amounts. Published weeks late"}
+  - {type: agenda,                   richness: 2, note: "Earliest but thin. Often only item titles"}
+  - {type: video_transcript,         richness: 3, note: "Earliest and most candid. Most expensive to process"}
+
+# ---------------------------------------------------------------------------
+# OUTPUT SCHEMA: what the LLM returns for each hit (JSON)
+# ---------------------------------------------------------------------------
+output_schema:
+  is_signal:        "true/false. False for mentions with no work implied"
+  trades:           "list of trade keys from above"
+  stage:            "one stage key from above"
+  building:         "building or site name, if stated"
+  scope_summary:    "one sentence, plain words"
+  dollar_amount:    "number, if stated"
+  funding_source:   "bond, capital reserve, grant, operating budget, EPC, unknown"
+  key_dates:        "vote date, bid date, construction start, if stated"
+  vendors_named:    "architect, construction manager, contractor, with role"
+  evidence_quote:   "under 25 words, copied from the document, so a human can verify"
+  page_or_item:     "agenda item number or page"
+  confidence:       "0 to 1"
