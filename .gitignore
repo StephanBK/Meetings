@@ -7,3 +7,4 @@ pass2.csv
 pass3.csv
 *.log
 downloads/
+.env*
