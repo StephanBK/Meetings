@@ -4,9 +4,13 @@ import argparse
 import csv
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
+
+import yaml
 
 from . import db, config
+from .adapters.pdf_watcher import PdfWatcherAdapter
+from .fetch import fetch_new_documents
 
 
 def cmd_initdb(args):
@@ -120,6 +124,181 @@ def cmd_load_bodies(args):
     print(f"Loaded {len(params_list)} bodies.")
 
 
+def update_coverage_level(body_id: str, new_level: int, note: str = None):
+    """Update coverage level and log the change."""
+    current = db.fetch_one(
+        "SELECT coverage_level FROM bodies WHERE body_id = %s",
+        (body_id,)
+    )
+    old_level = current["coverage_level"] if current else 0
+
+    if old_level == new_level:
+        return  # No change needed
+
+    # Update body
+    db.execute(
+        "UPDATE bodies SET coverage_level = %s, last_checked = %s WHERE body_id = %s",
+        (new_level, datetime.now(), body_id),
+        commit=True
+    )
+
+    # Log the change
+    db.execute(
+        """INSERT INTO coverage_log (body_id, old_level, new_level, note, changed_at)
+           VALUES (%s, %s, %s, %s, %s)""",
+        (body_id, old_level, new_level, note, datetime.now()),
+        commit=True
+    )
+
+    print(f"  Coverage: {body_id} {old_level} -> {new_level}")
+
+
+def cmd_discover(args):
+    """Discover documents from board pages."""
+    # Load slice bodies config
+    slice_config_path = config.CONFIG_DIR / "slice_bodies.yaml"
+    if not slice_config_path.exists():
+        print(f"Error: {slice_config_path} not found", file=sys.stderr)
+        sys.exit(1)
+
+    with open(slice_config_path) as f:
+        slice_config = yaml.safe_load(f)
+
+    # Backfill window: 12 months ago from today
+    backfill_start = date(date.today().year - 1, date.today().month, date.today().day)
+    print(f"Backfill window: {backfill_start} to today")
+
+    adapter = PdfWatcherAdapter(backfill_start)
+    total_new = 0
+    total_existing = 0
+
+    for body_config in slice_config["bodies"]:
+        body_id = body_config["body_id"]
+        name = body_config["name"]
+        pages = body_config["pages"]
+        expected = body_config.get("expected_meetings_per_year", 20)
+
+        print(f"\n{name} ({body_id})")
+
+        # Discover documents
+        docs = adapter.list_documents(body_id, pages)
+
+        if not docs:
+            print("  No documents found")
+            continue
+
+        # Update to level 4 (adapter found documents)
+        update_coverage_level(body_id, 4, "Adapter discovered documents")
+
+        # Insert documents into database
+        new_count = 0
+        existing_count = 0
+
+        for doc in docs:
+            # Check if already exists
+            existing = db.fetch_one(
+                "SELECT document_id FROM documents WHERE source_url = %s",
+                (doc.source_url,)
+            )
+
+            if existing:
+                existing_count += 1
+                continue
+
+            # Insert new document
+            db.execute(
+                """INSERT INTO documents (body_id, doc_type, source_url, link_text, status)
+                   VALUES (%s, %s, %s, %s, 'new')""",
+                (body_id, doc.doc_type, doc.source_url, doc.link_text),
+                commit=True
+            )
+
+            # Create or find meeting record if we have a date
+            if doc.meeting_date:
+                meeting = db.fetch_one(
+                    """SELECT meeting_id FROM meetings
+                       WHERE body_id = %s AND meeting_date = %s AND meeting_type = %s""",
+                    (body_id, doc.meeting_date, doc.meeting_type or "regular")
+                )
+
+                if not meeting:
+                    db.execute(
+                        """INSERT INTO meetings (body_id, meeting_date, meeting_type)
+                           VALUES (%s, %s, %s)
+                           ON CONFLICT DO NOTHING""",
+                        (body_id, doc.meeting_date, doc.meeting_type or "regular"),
+                        commit=True
+                    )
+
+            new_count += 1
+
+        total_new += new_count
+        total_existing += existing_count
+
+        # Get actual count in backfill window
+        doc_count = db.fetch_one(
+            "SELECT COUNT(*) as cnt FROM documents WHERE body_id = %s",
+            (body_id,)
+        )["cnt"]
+
+        print(f"  New: {new_count}, Existing: {existing_count}")
+        print(f"  Documents in DB: {doc_count}, Expected meetings/year: {expected}")
+
+    print(f"\nTotal: {total_new} new, {total_existing} existing")
+
+
+def cmd_fetch(args):
+    """Fetch documents with status 'new'."""
+    print("Fetching new documents...")
+    success, errors = fetch_new_documents()
+    print(f"\nFetch complete: {success} success, {errors} errors")
+
+    # Update coverage to level 5 for bodies with fetched documents
+    bodies_with_fetched = db.fetch_all(
+        """SELECT DISTINCT body_id FROM documents WHERE status = 'fetched'"""
+    )
+
+    for row in bodies_with_fetched:
+        body_id = row["body_id"]
+        current = db.fetch_one(
+            "SELECT coverage_level FROM bodies WHERE body_id = %s",
+            (body_id,)
+        )
+        if current and current["coverage_level"] < 5:
+            update_coverage_level(body_id, 5, "First successful document fetch")
+
+            # Update last_success
+            db.execute(
+                "UPDATE bodies SET last_success = %s WHERE body_id = %s",
+                (datetime.now(), body_id),
+                commit=True
+            )
+
+    # Print gap check
+    print("\n--- Gap Check (Level 6 readiness) ---")
+    slice_config_path = config.CONFIG_DIR / "slice_bodies.yaml"
+    with open(slice_config_path) as f:
+        slice_config = yaml.safe_load(f)
+
+    for body_config in slice_config["bodies"]:
+        body_id = body_config["body_id"]
+        name = body_config["name"]
+        expected = body_config.get("expected_meetings_per_year", 20)
+
+        doc_count = db.fetch_one(
+            "SELECT COUNT(*) as cnt FROM documents WHERE body_id = %s AND status = 'fetched'",
+            (body_id,)
+        )["cnt"]
+
+        coverage = db.fetch_one(
+            "SELECT coverage_level FROM bodies WHERE body_id = %s",
+            (body_id,)
+        )
+        level = coverage["coverage_level"] if coverage else 0
+
+        print(f"{name}: {doc_count} docs fetched, {expected} expected/year, level {level}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -134,12 +313,23 @@ def main():
     load_parser = subparsers.add_parser("load-bodies", help="Load bodies from CSV")
     load_parser.add_argument("csv_file", help="Path to bodies CSV file")
 
+    # discover command
+    discover_parser = subparsers.add_parser("discover", help="Discover documents from board pages")
+    discover_parser.add_argument("--slice", action="store_true", help="Use slice_bodies.yaml config")
+
+    # fetch command
+    subparsers.add_parser("fetch", help="Fetch documents with status 'new'")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
         cmd_initdb(args)
     elif args.command == "load-bodies":
         cmd_load_bodies(args)
+    elif args.command == "discover":
+        cmd_discover(args)
+    elif args.command == "fetch":
+        cmd_fetch(args)
 
 
 if __name__ == "__main__":

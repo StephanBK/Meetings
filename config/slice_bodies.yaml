@@ -1,0 +1,23 @@
+# Slice bodies for vertical slice testing
+# These 3 Long Island school districts post PDFs on their own sites
+# Files are hosted on files.smartsites.parentsquare.com
+
+bodies:
+  - body_id: NCES-3608130
+    name: Commack Union Free School District
+    # Note: /agenda redirects to BoardDocs (blocked), so only minutes are available
+    pages:
+      - https://commack.k12.ny.us/boeminutes
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3608880
+    name: Deer Park Union Free School District
+    pages:
+      - https://www.deerparkschools.org/agenda-and-minutes
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3630690
+    name: West Islip Union Free School District
+    pages:
+      - https://www.wi.k12.ny.us/boe
+    expected_meetings_per_year: 20
