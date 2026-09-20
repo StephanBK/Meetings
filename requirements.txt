@@ -3,3 +3,6 @@ pyyaml
 playwright
 psycopg2-binary
 beautifulsoup4
+pdfplumber
+pdf2image
+pytesseract

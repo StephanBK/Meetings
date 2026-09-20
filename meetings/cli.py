@@ -11,6 +11,7 @@ import yaml
 from . import db, config
 from .adapters.pdf_watcher import PdfWatcherAdapter
 from .fetch import fetch_new_documents
+from .extract import extract_fetched_documents
 
 
 def cmd_initdb(args):
@@ -299,6 +300,13 @@ def cmd_fetch(args):
         print(f"{name}: {doc_count} docs fetched, {expected} expected/year, level {level}")
 
 
+def cmd_extract(args):
+    """Extract text from fetched documents."""
+    print("Extracting text from fetched documents...")
+    native, ocr, errors = extract_fetched_documents()
+    print(f"\nExtraction complete: {native} native, {ocr} OCR, {errors} errors")
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -320,6 +328,9 @@ def main():
     # fetch command
     subparsers.add_parser("fetch", help="Fetch documents with status 'new'")
 
+    # extract command
+    subparsers.add_parser("extract", help="Extract text from fetched documents")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
@@ -330,6 +341,8 @@ def main():
         cmd_discover(args)
     elif args.command == "fetch":
         cmd_fetch(args)
+    elif args.command == "extract":
+        cmd_extract(args)
 
 
 if __name__ == "__main__":
