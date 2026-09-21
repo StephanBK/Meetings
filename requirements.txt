@@ -6,3 +6,4 @@ beautifulsoup4
 pdfplumber
 pdf2image
 pytesseract
+anthropic

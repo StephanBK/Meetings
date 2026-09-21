@@ -15,7 +15,15 @@ if _env_path.exists():
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_WORKSPACE_ID = os.environ.get("ANTHROPIC_WORKSPACE_ID", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "claude-haiku-4-5-20251001")
+
+# LLM pricing per million tokens
+LLM_PRICING = {
+    "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
+    "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},
+    "claude-opus-4-5-20251101": {"input": 15.00, "output": 75.00},
+}
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent

@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS signals (
     is_signal BOOLEAN NOT NULL,
     trades TEXT[],
     stage TEXT,
+    stage_evidence TEXT,
+    stage_verified BOOLEAN DEFAULT FALSE,
     building TEXT,
     scope_summary TEXT,
     dollar_amount NUMERIC,

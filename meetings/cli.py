@@ -13,6 +13,7 @@ from .adapters.pdf_watcher import PdfWatcherAdapter
 from .fetch import fetch_new_documents
 from .extract import extract_fetched_documents
 from .scan import scan_extracted_documents
+from .classify import classify_documents, print_cost_summary
 
 
 def cmd_initdb(args):
@@ -315,6 +316,27 @@ def cmd_scan(args):
     print(f"\nScan complete: {docs_scanned} documents scanned, {total_hits} total hits")
 
 
+def cmd_classify(args):
+    """Classify documents with LLM."""
+    from . import config
+
+    # Parse document IDs if provided
+    doc_ids = None
+    if args.docs:
+        doc_ids = [int(d.strip()) for d in args.docs.split(",")]
+        print(f"Classifying {len(doc_ids)} specific documents...")
+    elif args.all:
+        print("Classifying all scanned documents...")
+    else:
+        print("Error: specify --all or --docs", file=sys.stderr)
+        sys.exit(1)
+
+    docs_classified, total_signals, input_tokens, output_tokens = classify_documents(doc_ids)
+
+    print(f"\nClassification complete: {docs_classified} documents, {total_signals} signals")
+    print_cost_summary(input_tokens, output_tokens, config.LLM_MODEL)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -342,6 +364,11 @@ def main():
     # scan command
     subparsers.add_parser("scan", help="Scan extracted documents for keyword hits")
 
+    # classify command
+    classify_parser = subparsers.add_parser("classify", help="Classify documents with LLM")
+    classify_parser.add_argument("--all", action="store_true", help="Classify all scanned documents")
+    classify_parser.add_argument("--docs", help="Comma-separated list of document IDs to classify")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
@@ -356,6 +383,8 @@ def main():
         cmd_extract(args)
     elif args.command == "scan":
         cmd_scan(args)
+    elif args.command == "classify":
+        cmd_classify(args)
 
 
 if __name__ == "__main__":
