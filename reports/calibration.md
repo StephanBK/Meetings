@@ -4,8 +4,8 @@
 
 ## Miss Rate and False-Hit Rate
 
-- **Miss rate** (LLM signal with no keyword hit): 12.0% (42/351)
-- **False-hit rate** (keyword hit with no LLM signal): 77.6% (309/398)
+- **Miss rate** (LLM signal with no keyword hit): 10.8% (38/351)
+- **False-hit rate** (keyword hit with no LLM signal): 78.2% (333/426)
 
 ## Missed Passages
 
@@ -53,17 +53,8 @@ Signals where no keyword hit existed (taxonomy gaps):
 - [NCES-3608130] Digital Media Classroom renovation with interior finishes....
   Quote: "Digital Media Classroom Renovation (G-1) Austin Interiors Low bidder"
 
-- [NCES-3608880] Lease equipment including five 2027 diesel buses and other e...
-  Quote: "purchase, acquire and lease certain equipment including various (5) 2027 IC 64-passenger (diesel) bu..."
-
 - [NCES-3608880] Bus parts and maintenance services awarded to multiple vendo...
   Quote: "bid be awarded to the following vendors as the lowest responsible bidders meeting specifications"
-
-- [NCES-3608880] 2025-2026 Capital Improvement Program general construction w...
-  Quote: "bid be awarded to the following vendor as the lowest responsible bidder: Irwin Contracting Inc. $1,4..."
-
-- [NCES-3608880] Pool chemicals and supplies procurement for 2026-2027 school...
-  Quote: "Bid No. BDP25-003 Pool Chemicals and Supplies 2/26/2026-2/25/2027"
 
 - [NCES-3608880] Boiler and burner equipment maintenance, service and repair ...
   Quote: "Bids for Bid # B DP25- 018 Boiler/Burner Equipment Maintenance, Service and Repair were received and..."
@@ -71,7 +62,16 @@ Signals where no keyword hit existed (taxonomy gaps):
 - [NCES-3608880] Service and rebuild pumps and electrical motors for renewal....
   Quote: "RFB No. BDP24-014 Service & Rebuild Pumps and Electrical Motors"
 
-*... and 22 more missed signals*
+- [NCES-3608880] Additional TV screens installed in Board Room for presentati...
+  Quote: "additional TV screens in the Board Room for better viewing of presentations"
+
+- [NCES-3608880] Indoor bleacher and basketball backstop maintenance and annu...
+  Quote: "RFB No. BDP24-013 Indoor Bleacher/Basketball Backstop Maintenance, Annual Inspection"
+
+- [NCES-3608880] Boiler and burner equipment maintenance, service and repair ...
+  Quote: "Bids for Bid # B DP25- 018 Boiler/Burner Equipment Maintenance, Service and Repair were received and..."
+
+*... and 18 more missed signals*
 
 ## Repeated Projects
 

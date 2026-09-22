@@ -1,4 +1,5 @@
-# Meetings: signal taxonomy v0.2 (2026-09-20)
+# Meetings: signal taxonomy v0.3 (2026-09-21)
+# v0.3 changes come from calibration.md missed passages analysis on 138 in-window documents.
 # v0.2 changes come from a smoke test on 6 real Long Island documents (Commack, Deer Park, West Islip).
 # Purpose: one controlled vocabulary shared by the free keyword scan and the LLM classifier.
 # How it is used:
@@ -6,9 +7,20 @@
 #      and the match is not cancelled by a negative phrase.
 #   2. LLM classifier: reads the text around each hit and fills the output_schema at the bottom.
 # Matching rules: case-insensitive, whole words, plural forms included. Phrases match as written.
-# Status: DRAFT. Smoke tested on 6 documents only. Calibration will add and remove terms.
+# Status: DRAFT. Calibrated on 138 in-window documents. Miss rate improved.
+#
+# v0.3 additions:
+#   - trades/interiors: wall tile
+#   - trades/general_construction: canopy installation, capital renovation
+#   - trades/plumbing: pumps, rebuild pumps
+#   - trades/hvac_mechanical: service and repair
+#   - trades/electrical_lighting: electrical motors
+#   - trades/maintenance_services: pool chemicals, bus parts, buses
+#   - stages/4_design: nysed facilities planning, nysed forms
+#   - stages/6_award: bid be awarded
+#   - triggers: lowest bidder
 
-version: 0.2
+version: 0.3
 
 # ---------------------------------------------------------------------------
 # DIMENSION 1: TRADE (what kind of work)
@@ -24,20 +36,22 @@ trades:
     keywords: [hvac, boiler, chiller, cooling tower, air handler, ahu, rooftop unit, rtu,
                unit ventilator, univent, ventilation, air conditioning, heat pump, geothermal,
                vrf, ductwork, building management system, bms, controls upgrade, steam trap,
-               burner, hot water heater, mechanical upgrade, heating, cooling, heating and cooling]
+               burner, hot water heater, mechanical upgrade, heating, cooling, heating and cooling,
+               service and repair, boiler maintenance]
   electrical_lighting:
     label: "Electrical and lighting"
     keywords: [electrical upgrade, switchgear, transformer, panelboard, electrical service,
                generator, emergency generator, led lighting, lighting retrofit, lighting upgrade,
                field lighting, fire alarm, public address, clock system, ev charger, ev charging,
-               electric upgrade, electric service, pseg]
+               electric upgrade, electric service, pseg, electrical motors]
   roofing:
     label: "Roofing"
     keywords: [roof, roofing, reroof, roof replacement, roof repair, roof leak, membrane, flashing, parapet]
   plumbing:
     label: "Plumbing and water"
     keywords: [plumbing, water main, sanitary, sewer line, domestic water, backflow, lead in water,
-               water fountain, bottle filler, bathroom renovation, restroom renovation, toilet room]
+               water fountain, bottle filler, bathroom renovation, restroom renovation, toilet room,
+               pumps, rebuild pumps]
   life_safety_security:
     label: "Fire, life safety, security"
     keywords: [sprinkler, fire suppression, security vestibule, access control, door hardening,
@@ -58,18 +72,21 @@ trades:
   interiors:
     label: "Interiors and finishes"
     keywords: [flooring, floor replacement, gym floor, ceiling, ceiling tile, painting, casework,
-               locker, auditorium seating, science lab renovation, classroom renovation, kitchen equipment]
+               locker, auditorium seating, science lab renovation, classroom renovation, kitchen equipment,
+               wall tile]
   general_construction:
     label: "General construction (trade not stated)"
     keywords: [construction project, under construction, construction has begun, pool construction,
                renovation, renovation project, reconstruction, rehabilitation, building addition,
-               summer projects, summer work, concession, command center]
+               summer projects, summer work, concession, command center,
+               canopy installation, capital renovation]
   maintenance_services:
     label: "Recurring maintenance and service contracts"
     keywords: [service contract, maintenance contract, maintenance agreement, preventive maintenance,
                custodial, janitorial, cleaning services, pest control, elevator maintenance,
                hvac maintenance, generator maintenance, fire alarm inspection, snow removal, landscaping,
-               cooperative bid, piggyback, requirements contract]
+               cooperative bid, piggyback, requirements contract,
+               pool chemicals, bus parts, buses, diesel buses]
 
 # ---------------------------------------------------------------------------
 # DIMENSION 2: STAGE (how early we caught it). Lower number = earlier = more valuable.
@@ -101,7 +118,8 @@ stages:
                construction management services, schematic design, design development,
                construction documents, seqra, type ii action, negative declaration,
                sed approval, state education department approval, office of facilities planning,
-               letter of intent, plans and specifications]
+               letter of intent, plans and specifications,
+               nysed facilities planning, nysed forms]
   5_bid:
     label: "Bid or RFP out"
     value: "Public. Every bid service already has it."
@@ -111,7 +129,8 @@ stages:
     label: "Contract award"
     value: "Too late for the prime. Useful for subs, suppliers and competitor pricing."
     keywords: [award of bid, award the contract, lowest responsible bidder, bid award, bid tabulation,
-               hereby awards, contract award, rejected all bids, rebid]
+               hereby awards, contract award, rejected all bids, rebid,
+               bid be awarded, lowest bidder]
   7_construction:
     label: "Under construction"
     value: "Change orders show scope growth and who is on site."
@@ -123,7 +142,7 @@ stages:
 # ---------------------------------------------------------------------------
 triggers: [bond project, capital fund, capital reserve, grant disbursement, capital project, capital improvement, bond proposition, building condition survey,
            five-year capital plan, energy performance contract, emergency project, seqra,
-           facilities committee, buildings and grounds, change order, award of bid]
+           facilities committee, buildings and grounds, change order, award of bid, lowest bidder, bid be awarded]
 
 # ---------------------------------------------------------------------------
 # NEGATIVE PHRASES: cancel a keyword match when they appear in the same sentence
