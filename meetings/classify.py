@@ -54,8 +54,8 @@ RULES:
 5. The evidence_quote MUST be copied exactly from the text (under 25 words). It must appear verbatim in the document.
 6. For dollar_amount, extract only the numeric value (no $ or commas). Leave null if not stated.
 7. For trades, use the exact keys from the list above.
-8. For stage, choose the most advanced stage for which THIS project has explicit evidence in the text. Words about other agenda items do not count. If the text gives no stage evidence for this project, use stage "unknown". Valid values: 1_problem, 2_study, 3_funding, 4_design, 5_bid, 6_award, 7_construction, or "unknown".
-9. For stage_evidence, copy the exact words from the text (under 15 words) that justify the stage you chose. Must appear verbatim in the document. Leave empty if stage is "unknown".
+8. For stage, choose the most advanced stage for which THIS project has explicit evidence in the text. Words about other agenda items do not count. If the text contains no stage keywords (from the STAGES list above) for this specific project, you MUST use stage "unknown". Valid values: 1_problem, 2_study, 3_funding, 4_design, 5_bid, 6_award, 7_construction, or "unknown".
+9. REQUIRED: For stage_evidence, copy the exact words from the text (under 15 words) that justify the stage you chose. Must appear verbatim in the document. If you cannot find explicit stage keywords for this project, set stage to "unknown" and leave stage_evidence empty. A stage other than "unknown" REQUIRES non-empty stage_evidence.
 10. confidence should be 0.0 to 1.0 based on how clearly this is a real construction/facilities signal.
 
 Return ONLY valid JSON, no other text."""
@@ -117,16 +117,57 @@ def extract_json_array(text: str) -> Optional[list]:
     return None
 
 
-def validate_evidence_quote(quote: str, text: str) -> bool:
-    """Check if quote appears in text (case-insensitive, whitespace-flexible)."""
+def validate_evidence_quote(quote: str, text: str, min_word_match: float = 0.8) -> bool:
+    """
+    Check if quote appears in text using flexible matching.
+
+    Compares after lowercasing and collapsing whitespace.
+    Accepts a match of at least min_word_match (80%) of the words in order.
+
+    Args:
+        quote: The quote to validate
+        text: The source text to check against
+        min_word_match: Minimum fraction of words that must match in order (default 0.8)
+
+    Returns:
+        True if quote matches sufficiently, False otherwise
+    """
     if not quote:
         return True  # No quote to validate
 
-    # Normalize whitespace
+    # Normalize whitespace and lowercase
     quote_normalized = ' '.join(quote.lower().split())
     text_normalized = ' '.join(text.lower().split())
 
-    return quote_normalized in text_normalized
+    # First try exact substring match
+    if quote_normalized in text_normalized:
+        return True
+
+    # Fall back to word-level matching (80% of words in order)
+    quote_words = quote_normalized.split()
+    text_words = text_normalized.split()
+
+    if not quote_words:
+        return True
+
+    # Find longest common subsequence of words
+    matched_count = 0
+    text_idx = 0
+
+    for quote_word in quote_words:
+        # Look for this word in remaining text
+        while text_idx < len(text_words):
+            if text_words[text_idx] == quote_word:
+                matched_count += 1
+                text_idx += 1
+                break
+            text_idx += 1
+        else:
+            # Word not found in remaining text
+            break
+
+    match_ratio = matched_count / len(quote_words)
+    return match_ratio >= min_word_match
 
 
 def classify_chunk(

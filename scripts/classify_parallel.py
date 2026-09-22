@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Parallel document classification with rate limiting and resume support."""
 
+import argparse
 import sys
 import time
 import threading
@@ -33,14 +34,23 @@ total_output_tokens = 0
 errors = 0
 
 
-def get_unclassified_documents():
-    """Get all documents that need classification (status = 'scanned')."""
-    docs = list(db.fetch_all(
-        """SELECT document_id, body_id, text, text_method
-           FROM documents
-           WHERE status = 'scanned'
-           ORDER BY body_id, document_id"""
-    ))
+def get_unclassified_documents(in_window_only: bool = False):
+    """Get documents that need classification."""
+    if in_window_only:
+        # Get in_window documents regardless of status
+        docs = list(db.fetch_all(
+            """SELECT document_id, body_id, text, text_method
+               FROM documents
+               WHERE in_window = true
+               ORDER BY body_id, document_id"""
+        ))
+    else:
+        docs = list(db.fetch_all(
+            """SELECT document_id, body_id, text, text_method
+               FROM documents
+               WHERE status = 'scanned'
+               ORDER BY body_id, document_id"""
+        ))
     return docs
 
 
@@ -99,12 +109,19 @@ def classify_with_retry(doc, client, system_prompt, model):
 def main():
     global total_docs, total_signals, total_input_tokens, total_output_tokens, errors
 
+    parser = argparse.ArgumentParser(description="Parallel document classification")
+    parser.add_argument("--in-window", action="store_true",
+                        help="Classify only in_window documents (regardless of status)")
+    args = parser.parse_args()
+
     print(f"=== Parallel Classification ({NUM_WORKERS} workers) ===")
     print(f"Started at: {datetime.now().isoformat()}")
+    if args.in_window:
+        print("Mode: in_window documents only")
     print()
 
     # Get documents to classify
-    docs = get_unclassified_documents()
+    docs = get_unclassified_documents(in_window_only=args.in_window)
     print(f"Documents to classify: {len(docs)}")
 
     if not docs:
