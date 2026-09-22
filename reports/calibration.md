@@ -4,8 +4,8 @@
 
 ## Miss Rate and False-Hit Rate
 
-- **Miss rate** (LLM signal with no keyword hit): 10.8% (38/351)
-- **False-hit rate** (keyword hit with no LLM signal): 78.2% (333/426)
+- **Miss rate** (LLM signal with no keyword hit): 6.3% (22/351)
+- **False-hit rate** (keyword hit with no LLM signal): 77.7% (335/431)
 
 ## Missed Passages
 
@@ -56,22 +56,22 @@ Signals where no keyword hit existed (taxonomy gaps):
 - [NCES-3608880] Bus parts and maintenance services awarded to multiple vendo...
   Quote: "bid be awarded to the following vendors as the lowest responsible bidders meeting specifications"
 
-- [NCES-3608880] Boiler and burner equipment maintenance, service and repair ...
-  Quote: "Bids for Bid # B DP25- 018 Boiler/Burner Equipment Maintenance, Service and Repair were received and..."
-
-- [NCES-3608880] Service and rebuild pumps and electrical motors for renewal....
-  Quote: "RFB No. BDP24-014 Service & Rebuild Pumps and Electrical Motors"
-
 - [NCES-3608880] Additional TV screens installed in Board Room for presentati...
   Quote: "additional TV screens in the Board Room for better viewing of presentations"
 
-- [NCES-3608880] Indoor bleacher and basketball backstop maintenance and annu...
-  Quote: "RFB No. BDP24-013 Indoor Bleacher/Basketball Backstop Maintenance, Annual Inspection"
+- [NCES-3630690] Multi-year service agreement for Xerox networked copier main...
+  Quote: "Approval of Multi-Year Service Agreement – Xerox Networked Copier 2026-2029"
 
-- [NCES-3608880] Boiler and burner equipment maintenance, service and repair ...
-  Quote: "Bids for Bid # B DP25- 018 Boiler/Burner Equipment Maintenance, Service and Repair were received and..."
+- [NCES-3630690] Purchase of rack truck with plow for district maintenance an...
+  Quote: "Board of Education hereby declares the purchase of such equipment constitutes an ordinary contingent..."
 
-*... and 18 more missed signals*
+- [NCES-3630690] Purchase of a rack truck with plow for district snow removal...
+  Quote: "purchase of a rack truck with a plow is necessary for district maintenance and operations"
+
+- [NCES-3630690] Purchase and installation of a gazebo for the courtyard....
+  Quote: "donated funds in the amounts of $3,163.83 from the West Islip Extraclassroom club, West Islip High S..."
+
+*... and 2 more missed signals*
 
 ## Repeated Projects
 

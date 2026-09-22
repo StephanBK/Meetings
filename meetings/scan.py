@@ -1,7 +1,7 @@
 """Keyword scan for construction/procurement signals in meeting documents.
 
-A 'passage' is a block of text between blank lines (roughly one agenda item or resolution).
-Vocabulary comes only from config/taxonomy.yaml.
+A 'passage' is a matching line plus 2 lines before and 3 lines after, merged when windows overlap.
+Skip patterns apply per line. Vocabulary comes only from config/taxonomy.yaml.
 """
 
 import re
@@ -79,21 +79,28 @@ def build_matchers():
     return trade_matchers, stage_matchers, trigger_matchers, negative_matchers, skip_matchers
 
 
-def split_passages(text: str) -> list[str]:
-    """Split text into passages (blocks separated by blank lines)."""
-    passages = []
-    for p in re.split(r"\n\s*\n", text):
-        # Normalize whitespace
-        p = re.sub(r"\s+", " ", p).strip()
-        # Only include passages with meaningful content
-        if len(p) > 25:
-            passages.append(p)
-    return passages
+def merge_windows(windows: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Merge overlapping or adjacent windows."""
+    if not windows:
+        return []
+    # Sort by start index
+    sorted_windows = sorted(windows)
+    merged = [sorted_windows[0]]
+    for start, end in sorted_windows[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end + 1:  # Overlapping or adjacent
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return merged
 
 
 def scan_text(text: str) -> list[dict]:
     """
-    Scan text for keyword hits.
+    Scan text for keyword hits using line-based matching.
+
+    A hit passage is the matching line plus 2 lines before and 3 after, merged when windows overlap.
+    Skip patterns apply per line, not per passage.
 
     Returns list of hit dicts with:
         - text: the passage text
@@ -103,42 +110,93 @@ def scan_text(text: str) -> list[dict]:
     """
     trade_matchers, stage_matchers, trigger_matchers, negative_matchers, skip_matchers = build_matchers()
 
-    hits = []
-    for passage in split_passages(text):
-        # Skip if passage matches any skip pattern (personnel lines, etc.)
-        if any(skip.search(passage) for skip in skip_matchers):
+    # Split text into lines
+    lines = text.split('\n')
+
+    # Find all matching line indices (excluding skip pattern lines)
+    hit_lines = []  # List of (line_index, trades, stages, triggers)
+
+    for i, line in enumerate(lines):
+        # Skip if line matches any skip pattern (personnel lines, etc.)
+        if any(skip.search(line) for skip in skip_matchers):
             continue
 
         # Remove negative phrases before matching
-        clean_passage = passage
+        clean_line = line
         for neg in negative_matchers:
-            clean_passage = neg.sub(" ", clean_passage)
+            clean_line = neg.sub(" ", clean_line)
 
         # Find trade matches
         trades = {}
         for trade_key, matchers in trade_matchers.items():
-            matched = [kw for kw, rx in matchers if rx.search(clean_passage)]
+            matched = [kw for kw, rx in matchers if rx.search(clean_line)]
             if matched:
                 trades[trade_key] = matched
 
         # Find stage matches
         stages = {}
         for stage_key, matchers in stage_matchers.items():
-            matched = [kw for kw, rx in matchers if rx.search(clean_passage)]
+            matched = [kw for kw, rx in matchers if rx.search(clean_line)]
             if matched:
                 stages[stage_key] = matched
 
         # Find trigger matches
-        triggers = [kw for kw, rx in trigger_matchers if rx.search(clean_passage)]
+        triggers = [kw for kw, rx in trigger_matchers if rx.search(clean_line)]
 
         # A hit requires at least one trade OR one trigger
         if trades or triggers:
-            hits.append({
-                "text": passage,
-                "trades": trades,
-                "stages": stages,
-                "triggers": triggers,
-            })
+            hit_lines.append((i, trades, stages, triggers))
+
+    if not hit_lines:
+        return []
+
+    # Build windows: 2 lines before, 3 lines after for each hit line
+    windows = []
+    for line_idx, _, _, _ in hit_lines:
+        start = max(0, line_idx - 2)
+        end = min(len(lines) - 1, line_idx + 3)
+        windows.append((start, end))
+
+    # Merge overlapping windows
+    merged_windows = merge_windows(windows)
+
+    # Create passages from merged windows, aggregating keywords from all hit lines in each window
+    hits = []
+    hit_line_set = {idx: (trades, stages, triggers) for idx, trades, stages, triggers in hit_lines}
+
+    for start, end in merged_windows:
+        # Extract passage text
+        passage_lines = lines[start:end + 1]
+        passage_text = ' '.join(line.strip() for line in passage_lines if line.strip())
+
+        # Only include passages with meaningful content
+        if len(passage_text) < 25:
+            continue
+
+        # Aggregate trades, stages, triggers from all hit lines in this window
+        all_trades = {}
+        all_stages = {}
+        all_triggers = []
+
+        for line_idx in range(start, end + 1):
+            if line_idx in hit_line_set:
+                trades, stages, triggers = hit_line_set[line_idx]
+                for trade_key, keywords in trades.items():
+                    if trade_key not in all_trades:
+                        all_trades[trade_key] = []
+                    all_trades[trade_key].extend(kw for kw in keywords if kw not in all_trades[trade_key])
+                for stage_key, keywords in stages.items():
+                    if stage_key not in all_stages:
+                        all_stages[stage_key] = []
+                    all_stages[stage_key].extend(kw for kw in keywords if kw not in all_stages[stage_key])
+                all_triggers.extend(t for t in triggers if t not in all_triggers)
+
+        hits.append({
+            "text": passage_text,
+            "trades": all_trades,
+            "stages": all_stages,
+            "triggers": all_triggers,
+        })
 
     return hits
 
