@@ -14,6 +14,7 @@ from .fetch import fetch_new_documents
 from .extract import extract_fetched_documents
 from .scan import scan_extracted_documents
 from .classify import classify_documents, print_cost_summary
+from .reports import generate_all_reports
 
 
 def cmd_initdb(args):
@@ -337,6 +338,12 @@ def cmd_classify(args):
     print_cost_summary(input_tokens, output_tokens, config.LLM_MODEL)
 
 
+def cmd_report(args):
+    """Generate reports."""
+    print("Generating reports...")
+    generate_all_reports()
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -369,6 +376,9 @@ def main():
     classify_parser.add_argument("--all", action="store_true", help="Classify all scanned documents")
     classify_parser.add_argument("--docs", help="Comma-separated list of document IDs to classify")
 
+    # report command
+    subparsers.add_parser("report", help="Generate reports")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
@@ -385,6 +395,8 @@ def main():
         cmd_scan(args)
     elif args.command == "classify":
         cmd_classify(args)
+    elif args.command == "report":
+        cmd_report(args)
 
 
 if __name__ == "__main__":
