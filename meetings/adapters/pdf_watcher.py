@@ -12,18 +12,6 @@ from .base import Adapter, DocRef
 from .. import config
 
 
-# Date patterns to try when parsing link text
-DATE_PATTERNS = [
-    # "September 3, 2026" or "September 03, 2026"
-    r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})",
-    # "Sept 3, 2026" or "Sept. 3, 2026"
-    r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\.?\s+(\d{1,2}),?\s+(\d{4})",
-    # "9-3-26" or "09-03-26" or "9/3/26"
-    r"(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})",
-    # "2026-09-03"
-    r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})",
-]
-
 MONTH_MAP = {
     "january": 1, "jan": 1,
     "february": 2, "feb": 2,
@@ -39,31 +27,127 @@ MONTH_MAP = {
     "december": 12, "dec": 12,
 }
 
+# Full month names for regex
+MONTH_FULL = r"January|February|March|April|May|June|July|August|September|October|November|December"
+MONTH_ABBR = r"Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec"
 
-def parse_date(text: str) -> Optional[date]:
-    """Parse a date from link text. Returns None if no date found."""
-    text_lower = text.lower()
 
-    # Try month name patterns first
-    for pattern in DATE_PATTERNS[:2]:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            month_str, day_str, year_str = match.groups()
-            month = MONTH_MAP.get(month_str.lower().rstrip("."))
-            if month:
-                day = int(day_str)
-                year = int(year_str)
-                try:
-                    return date(year, month, day)
-                except ValueError:
-                    continue
+def normalize_dashes(text: str) -> str:
+    """Normalize en-dash, em-dash, and other dash variants to regular hyphen."""
+    # Replace en-dash (U+2013), em-dash (U+2014), and other variants
+    return re.sub(r'[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]', '-', text)
 
-    # Try numeric patterns
-    # M-D-YY or M/D/YY
-    match = re.search(DATE_PATTERNS[2], text)
+
+def extract_year_from_url(url: str) -> Optional[int]:
+    """Extract a 4-digit year from URL path or filename."""
+    # Look for 4-digit year in URL
+    match = re.search(r'[/_-]?(20\d{2}|19\d{2})[/_.-]', url)
     if match:
-        a, b, c = match.groups()
-        a, b, c = int(a), int(b), int(c)
+        return int(match.group(1))
+    # Also check end of URL before .pdf
+    match = re.search(r'(20\d{2}|19\d{2})\.pdf', url, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def parse_meeting_date(text: str, url: str = "", fallback_year: Optional[int] = None) -> Optional[date]:
+    """
+    Parse a meeting date from link text, with URL as fallback for year.
+
+    Handles:
+    - Full dates: "June 4, 2026", "September 8, 2026 - Building & Grounds"
+    - Any dash type (hyphen, en-dash, em-dash)
+    - Month + year only: "January 2009" -> January 1, 2009
+    - Day + month only: "July 2 - Meeting" -> infer year from URL or fallback
+    """
+    # Normalize dashes
+    text = normalize_dashes(text)
+    url = normalize_dashes(url)
+
+    # Pattern 1: Full month name + day + year
+    # "June 4, 2026" or "September 8, 2026 - Meeting"
+    match = re.search(
+        rf'({MONTH_FULL})\s+(\d{{1,2}}),?\s*-?\s*(\d{{4}})',
+        text, re.IGNORECASE
+    )
+    if match:
+        month_str, day_str, year_str = match.groups()
+        month = MONTH_MAP.get(month_str.lower())
+        if month:
+            try:
+                return date(int(year_str), month, int(day_str))
+            except ValueError:
+                pass
+
+    # Pattern 2: Abbreviated month + day + year
+    # "Sept 3, 2026" or "Sep. 3, 2026"
+    match = re.search(
+        rf'({MONTH_ABBR})\.?\s+(\d{{1,2}}),?\s*-?\s*(\d{{4}})',
+        text, re.IGNORECASE
+    )
+    if match:
+        month_str, day_str, year_str = match.groups()
+        month = MONTH_MAP.get(month_str.lower().rstrip("."))
+        if month:
+            try:
+                return date(int(year_str), month, int(day_str))
+            except ValueError:
+                pass
+
+    # Pattern 3: Month + year only (no day)
+    # "January 2009 School Board Minutes" -> January 1, 2009
+    match = re.search(
+        rf'({MONTH_FULL})\s+(\d{{4}})\b',
+        text, re.IGNORECASE
+    )
+    if match:
+        month_str, year_str = match.groups()
+        month = MONTH_MAP.get(month_str.lower())
+        if month:
+            try:
+                return date(int(year_str), month, 1)
+            except ValueError:
+                pass
+
+    # Pattern 4: Abbreviated month + year only
+    match = re.search(
+        rf'({MONTH_ABBR})\.?\s+(\d{{4}})\b',
+        text, re.IGNORECASE
+    )
+    if match:
+        month_str, year_str = match.groups()
+        month = MONTH_MAP.get(month_str.lower().rstrip("."))
+        if month:
+            try:
+                return date(int(year_str), month, 1)
+            except ValueError:
+                pass
+
+    # Pattern 5: Month + day only (no year) - need to infer year
+    # "July 2 - Annual Organizational Meeting"
+    match = re.search(
+        rf'({MONTH_FULL})\s+(\d{{1,2}})\b(?!\s*,?\s*\d{{4}})',
+        text, re.IGNORECASE
+    )
+    if match:
+        month_str, day_str = match.groups()
+        month = MONTH_MAP.get(month_str.lower())
+        if month:
+            # Try to get year from URL first
+            year = extract_year_from_url(url)
+            if year is None:
+                year = fallback_year
+            if year:
+                try:
+                    return date(year, month, int(day_str))
+                except ValueError:
+                    pass
+
+    # Pattern 6: Numeric M-D-YY or M/D/YY or M-D-YYYY
+    match = re.search(r'(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})', text)
+    if match:
+        a, b, c = int(match.group(1)), int(match.group(2)), int(match.group(3))
         # Assume M-D-Y format (US style)
         if c < 100:
             c += 2000 if c < 50 else 1900
@@ -73,8 +157,8 @@ def parse_date(text: str) -> Optional[date]:
             except ValueError:
                 pass
 
-    # YYYY-MM-DD
-    match = re.search(DATE_PATTERNS[3], text)
+    # Pattern 7: YYYY-MM-DD
+    match = re.search(r'(\d{4})[-/](\d{1,2})[-/](\d{1,2})', text)
     if match:
         year, month, day = int(match.group(1)), int(match.group(2)), int(match.group(3))
         try:
@@ -82,7 +166,28 @@ def parse_date(text: str) -> Optional[date]:
         except ValueError:
             pass
 
+    # Pattern 8: Try to find year in URL if we found month+day in text
+    # but couldn't match above (handles edge cases)
+    url_year = extract_year_from_url(url)
+    if url_year:
+        # Re-try month + day patterns with URL year
+        match = re.search(rf'({MONTH_ABBR})\.?\s+(\d{{1,2}})\b', text, re.IGNORECASE)
+        if match:
+            month_str, day_str = match.groups()
+            month = MONTH_MAP.get(month_str.lower().rstrip("."))
+            if month:
+                try:
+                    return date(url_year, month, int(day_str))
+                except ValueError:
+                    pass
+
     return None
+
+
+# Keep old function name for compatibility
+def parse_date(text: str) -> Optional[date]:
+    """Parse a date from link text. Returns None if no date found."""
+    return parse_meeting_date(text, "", None)
 
 
 def classify_doc_type(link_text: str, url: str) -> tuple[str, Optional[str]]:
@@ -229,11 +334,11 @@ class PdfWatcherAdapter(Adapter):
                     continue
                 seen_urls.add(url)
 
-                # Parse date
-                meeting_date = parse_date(link_text)
+                # Parse date with URL for year inference
+                meeting_date = parse_meeting_date(link_text, url)
                 if meeting_date is None:
-                    # Try parsing from URL/filename
-                    meeting_date = parse_date(url)
+                    # Try parsing from URL/filename as fallback
+                    meeting_date = parse_meeting_date(url, url)
 
                 # Filter by backfill window
                 if meeting_date and meeting_date < self.backfill_start:

@@ -38,6 +38,8 @@ CREATE TABLE IF NOT EXISTS documents (
     doc_type TEXT CHECK (doc_type IN ('agenda', 'minutes', 'packet', 'committee_agenda', 'other')),
     source_url TEXT UNIQUE NOT NULL,
     link_text TEXT,
+    meeting_date DATE,
+    in_window BOOLEAN,
     file_path TEXT,
     sha256 TEXT,
     bytes INTEGER,

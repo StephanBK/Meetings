@@ -113,6 +113,8 @@ Acceptance:
 - [ ] Second run of `discover` inserts 0 new rows
 - [ ] Bodies move to coverage_level 5 with `coverage_log` rows (level 4 when the adapter first lists documents, 5 after first successful fetch)
 - [ ] Print per body: documents found vs meetings expected in 12 months (first version of the level 6 gap check)
+- [ ] Every document has a meeting_date (dates parsed from link text with URL year inference)
+- [ ] No documents outside the backfill window (documents without parseable dates are still inserted with a warning)
 
 ## T3. Text extraction (est. 45 min)
 
