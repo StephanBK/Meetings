@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS signals (
     stage TEXT,
     stage_evidence TEXT,
     stage_verified BOOLEAN DEFAULT FALSE,
+    low_value BOOLEAN DEFAULT FALSE,
     building TEXT,
     scope_summary TEXT,
     dollar_amount NUMERIC,
