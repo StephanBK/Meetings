@@ -31,9 +31,9 @@
 
 | Body | In Window | Out of Window | No Date | Signals (in window) |
 |------|-----------|---------------|---------|---------------------|
-| Commack Union Free School District | 19 | 1 | 1 | 25 |
-| Deer Park Union Free School District | 42 | 1 | 1 | 76 |
-| West Islip Union Free School District | 77 | 107 | 3 | 250 |
-| **Total** | **138** | **109** | **5** | **351** |
+| Commack Union Free School District | 19 | 1 | 1 | 24 |
+| Deer Park Union Free School District | 42 | 1 | 1 | 71 |
+| West Islip Union Free School District | 77 | 107 | 3 | 153 |
+| **Total** | **138** | **109** | **5** | **248** |
 
 *Out-of-window totals: 109 documents, 601 signals*
