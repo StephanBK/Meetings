@@ -5,7 +5,7 @@ LI charter schools,NCES federal district directory 2023-24,6,exact from registry
 NYC Council bodies,legistar.council.nyc.gov department list,59,exact from registry,yes,yes,59,59,0,100.0,One API token unlocks all 59
 NYC community boards,NYC Open Data ruf7-3wgc,59,exact from registry,yes,yes,58,0,0,0.0,
 NYC education councils,Built by rule: 32 districts + 4 citywide + PEP,37,exact from registry,yes,yes,0,0,0,0.0,
-NYC charter school boards,NCES federal district directory 2023-24,277,exact from registry,yes,yes,271,0,0,0.0,277 entries but 165 distinct websites. Networks share one board. Dedupe needed
+NYC charter school boards,NCES federal district directory 2023-24,166,exact from registry,yes,yes,271,0,0,0.0,Deduped from 277 to 166 by website host. Networks share one board.
 NYC local authorities / LDCs,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",24,exact from registry,yes,yes,0,0,0,0.0,
 NY State authorities,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",45,exact from registry,yes,yes,0,0,0,0.0,
 LI local authorities / IDAs / LDCs,"NY Authorities Budget Office, data.ny.gov 4vym-q77x",43,exact from registry,yes,"no, ledger only",0,0,0,0.0,
