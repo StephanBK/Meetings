@@ -350,6 +350,74 @@ def cmd_report(args):
     generate_all_reports()
 
 
+def cmd_run_all(args):
+    """Run the complete pipeline: discover, fetch, extract, scan, classify, report.
+
+    This is the schedule-ready command for automated runs.
+    Uses slice_bodies.yaml for document discovery.
+    """
+    from datetime import datetime as dt
+
+    print("=" * 60)
+    print(f"MEETINGS PIPELINE - FULL RUN")
+    print(f"Started: {dt.now().isoformat()}")
+    print("=" * 60)
+
+    # Create a mock args object for sub-commands
+    class Args:
+        pass
+
+    # Step 1: Discover
+    print("\n" + "=" * 60)
+    print("STEP 1: DISCOVER")
+    print("=" * 60)
+    discover_args = Args()
+    discover_args.slice = True
+    cmd_discover(discover_args)
+
+    # Step 2: Fetch
+    print("\n" + "=" * 60)
+    print("STEP 2: FETCH")
+    print("=" * 60)
+    fetch_args = Args()
+    cmd_fetch(fetch_args)
+
+    # Step 3: Extract
+    print("\n" + "=" * 60)
+    print("STEP 3: EXTRACT")
+    print("=" * 60)
+    extract_args = Args()
+    cmd_extract(extract_args)
+
+    # Step 4: Scan
+    print("\n" + "=" * 60)
+    print("STEP 4: SCAN")
+    print("=" * 60)
+    scan_args = Args()
+    cmd_scan(scan_args)
+
+    # Step 5: Classify (all scanned documents)
+    print("\n" + "=" * 60)
+    print("STEP 5: CLASSIFY")
+    print("=" * 60)
+    classify_args = Args()
+    classify_args.all = True
+    classify_args.docs = None
+    cmd_classify(classify_args)
+
+    # Step 6: Report
+    print("\n" + "=" * 60)
+    print("STEP 6: REPORT")
+    print("=" * 60)
+    report_args = Args()
+    cmd_report(report_args)
+
+    print("\n" + "=" * 60)
+    print(f"PIPELINE COMPLETE")
+    print(f"Finished: {dt.now().isoformat()}")
+    print("=" * 60)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="meetings",
@@ -385,6 +453,9 @@ def main():
     # report command
     subparsers.add_parser("report", help="Generate reports")
 
+    # run-all command
+    subparsers.add_parser("run-all", help="Run complete pipeline (discover, fetch, extract, scan, classify, report)")
+
     args = parser.parse_args()
 
     if args.command == "initdb":
@@ -403,6 +474,8 @@ def main():
         cmd_classify(args)
     elif args.command == "report":
         cmd_report(args)
+    elif args.command == "run-all":
+        cmd_run_all(args)
 
 
 if __name__ == "__main__":
