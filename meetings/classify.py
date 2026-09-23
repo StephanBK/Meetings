@@ -347,15 +347,30 @@ def classify_document(
     return signal_count, total_input, total_output
 
 
-def classify_documents(document_ids: Optional[list[int]] = None) -> tuple[int, int, int, int]:
+def classify_documents(
+    document_ids: Optional[list[int]] = None,
+    in_window_only: bool = False,
+    cost_cap: Optional[float] = None
+) -> tuple[int, int, int, int]:
     """
     Classify documents.
 
-    If document_ids is None, classify all extracted documents.
-    If document_ids is provided, classify only those documents.
+    Args:
+        document_ids: If provided, classify only these documents.
+                      If None, classify all scanned documents.
+        in_window_only: If True, only classify in_window documents.
+        cost_cap: Daily cost cap in dollars. Stops classification when reached.
 
     Returns (documents_classified, total_signals, total_input_tokens, total_output_tokens).
     """
+    # Check daily cost cap before starting
+    if cost_cap is not None:
+        cap_reached, current_cost, remaining = check_daily_cap(cost_cap)
+        if cap_reached:
+            print(f"Daily cost cap reached (${current_cost:.4f} >= ${cost_cap:.2f}). Skipping classification.")
+            return 0, 0, 0, 0
+        print(f"Today's LLM cost: ${current_cost:.4f}, remaining budget: ${remaining:.4f}")
+
     # Initialize client
     client_kwargs = {"api_key": config.ANTHROPIC_API_KEY}
     if config.ANTHROPIC_WORKSPACE_ID:
@@ -380,10 +395,11 @@ def classify_documents(document_ids: Optional[list[int]] = None) -> tuple[int, i
             tuple(document_ids)
         ))
     else:
+        in_window_clause = "AND in_window = true" if in_window_only else ""
         docs = list(db.fetch_all(
-            """SELECT document_id, body_id, text, text_method
+            f"""SELECT document_id, body_id, text, text_method
                FROM documents
-               WHERE status = 'scanned'
+               WHERE status = 'scanned' {in_window_clause}
                ORDER BY body_id, document_id"""
         ))
 
@@ -400,6 +416,13 @@ def classify_documents(document_ids: Optional[list[int]] = None) -> tuple[int, i
     current_body = None
 
     for doc in docs:
+        # Check cost cap before each document
+        if cost_cap is not None:
+            cap_reached, current_cost, remaining = check_daily_cap(cost_cap)
+            if cap_reached:
+                print(f"\nDaily cost cap reached (${current_cost:.4f} >= ${cost_cap:.2f}). Stopping.")
+                break
+
         if doc["body_id"] != current_body:
             current_body = doc["body_id"]
             print(f"\n  {current_body}:")
@@ -440,3 +463,37 @@ def print_cost_summary(input_tokens: int, output_tokens: int, model: str):
     print(f"Output tokens: {output_tokens:,}")
     print(f"Total tokens:  {input_tokens + output_tokens:,}")
     print(f"Estimated cost: ${total_cost:.4f} (${pricing['input']}/M in, ${pricing['output']}/M out)")
+
+
+def get_today_llm_cost() -> float:
+    """Get total LLM cost for today from llm_runs table."""
+    from datetime import date
+
+    result = db.fetch_one("""
+        SELECT COALESCE(SUM(input_tokens), 0) as input_tokens,
+               COALESCE(SUM(output_tokens), 0) as output_tokens,
+               model
+        FROM llm_runs
+        WHERE created_at::date = %s
+        GROUP BY model
+    """, (date.today(),))
+
+    if not result:
+        return 0.0
+
+    model = result["model"] or config.LLM_MODEL
+    pricing = config.LLM_PRICING.get(model, {"input": 1.00, "output": 5.00})
+    input_cost = result["input_tokens"] * pricing["input"] / 1_000_000
+    output_cost = result["output_tokens"] * pricing["output"] / 1_000_000
+
+    return input_cost + output_cost
+
+
+def check_daily_cap(cost_cap: float) -> tuple[bool, float, float]:
+    """Check if daily cost cap has been reached.
+
+    Returns (cap_reached, current_cost, remaining).
+    """
+    current_cost = get_today_llm_cost()
+    remaining = max(0.0, cost_cap - current_cost)
+    return current_cost >= cost_cap, current_cost, remaining

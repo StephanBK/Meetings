@@ -36,3 +36,6 @@ REPORTS_DIR = PROJECT_ROOT / "reports"
 # Crawler settings
 USER_AGENT = "MeetingsBot/0.1 (+https://github.com/StephanBK/Meetings)"
 REQUEST_DELAY_SECONDS = 1.0
+
+# Cost control
+LLM_DAILY_CAP = float(os.environ.get("LLM_DAILY_CAP", "5.0"))  # Default $5/day

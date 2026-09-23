@@ -61,6 +61,37 @@ PDFs hosted on these domains are recorded as blocker code `PLATFORM_BLOCKS_BOTS`
     python3 fingerprint.py li_bodies.csv out.csv   # input needs columns: name, website
     python3 scan.py path/to/folder_with_txt_files
 
+### Pipeline commands
+
+    python3 -m meetings initdb                    # Create database schema
+    python3 -m meetings load-bodies data/bodies.csv
+    python3 -m meetings discover --slice          # Discover docs from slice_bodies.yaml
+    python3 -m meetings fetch                     # Download PDFs
+    python3 -m meetings extract                   # Extract text (native + OCR)
+    python3 -m meetings scan                      # Keyword scan
+    python3 -m meetings classify --in-window      # LLM classification
+    python3 -m meetings report                    # Generate reports
+    python3 -m meetings run-all                   # Full pipeline
+    python3 -m meetings run-all --dry-run         # Preview without executing
+
+### Railway cron example
+
+To run the pipeline daily at 6 AM UTC:
+
+1. Create a Railway cron service with schedule `0 6 * * *`
+2. Set environment variables:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `ANTHROPIC_API_KEY` - Claude API key
+   - `LLM_DAILY_CAP` - Max daily spend in dollars (default: 5)
+3. Start command: `python -m meetings run-all`
+
+The `run-all` command:
+- Discovers new documents from `config/slice_bodies.yaml`
+- Fetches, extracts, and scans documents
+- Classifies only `in_window` documents (last 12 months)
+- Stops classification if daily cost cap is reached
+- Generates reports
+
 ## Known issues
 
 - BoardDocs (about 62% of Long Island enrollment) answers automated clients with 403. Access route undecided

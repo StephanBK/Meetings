@@ -326,6 +326,7 @@ def cmd_scan(args):
 def cmd_classify(args):
     """Classify documents with LLM."""
     from . import config
+    from .classify import check_daily_cap
 
     # Parse document IDs if provided
     doc_ids = None
@@ -334,11 +335,20 @@ def cmd_classify(args):
         print(f"Classifying {len(doc_ids)} specific documents...")
     elif args.all:
         print("Classifying all scanned documents...")
+    elif args.in_window:
+        print("Classifying in_window scanned documents only...")
     else:
-        print("Error: specify --all or --docs", file=sys.stderr)
+        print("Error: specify --all, --in-window, or --docs", file=sys.stderr)
         sys.exit(1)
 
-    docs_classified, total_signals, input_tokens, output_tokens = classify_documents(doc_ids)
+    # Get cost cap
+    cost_cap = config.LLM_DAILY_CAP if hasattr(config, 'LLM_DAILY_CAP') else None
+
+    docs_classified, total_signals, input_tokens, output_tokens = classify_documents(
+        doc_ids,
+        in_window_only=getattr(args, 'in_window', False),
+        cost_cap=cost_cap
+    )
 
     print(f"\nClassification complete: {docs_classified} documents, {total_signals} signals")
     print_cost_summary(input_tokens, output_tokens, config.LLM_MODEL)
@@ -357,11 +367,22 @@ def cmd_run_all(args):
     Uses slice_bodies.yaml for document discovery.
     """
     from datetime import datetime as dt
+    from . import config
+
+    dry_run = getattr(args, 'dry_run', False)
+    mode = "DRY RUN" if dry_run else "FULL RUN"
 
     print("=" * 60)
-    print(f"MEETINGS PIPELINE - FULL RUN")
+    print(f"MEETINGS PIPELINE - {mode}")
     print(f"Started: {dt.now().isoformat()}")
+    if not dry_run:
+        print(f"Daily cost cap: ${config.LLM_DAILY_CAP:.2f}")
     print("=" * 60)
+
+    if dry_run:
+        # Dry run: just report what would happen
+        _dry_run_report()
+        return
 
     # Create a mock args object for sub-commands
     class Args:
@@ -396,12 +417,13 @@ def cmd_run_all(args):
     scan_args = Args()
     cmd_scan(scan_args)
 
-    # Step 5: Classify (all scanned documents)
+    # Step 5: Classify (in_window documents only, with cost cap)
     print("\n" + "=" * 60)
-    print("STEP 5: CLASSIFY")
+    print("STEP 5: CLASSIFY (in_window only)")
     print("=" * 60)
     classify_args = Args()
-    classify_args.all = True
+    classify_args.all = False
+    classify_args.in_window = True
     classify_args.docs = None
     cmd_classify(classify_args)
 
@@ -416,6 +438,51 @@ def cmd_run_all(args):
     print(f"PIPELINE COMPLETE")
     print(f"Finished: {dt.now().isoformat()}")
     print("=" * 60)
+
+
+def _dry_run_report():
+    """Report what each pipeline step would do without executing."""
+    import yaml
+    from . import config
+    from .classify import get_today_llm_cost
+
+    print("\n--- DRY RUN: What each step would do ---\n")
+
+    # Discover
+    slice_path = config.CONFIG_DIR / "slice_bodies.yaml"
+    if slice_path.exists():
+        with open(slice_path) as f:
+            slice_config = yaml.safe_load(f)
+        body_count = len(slice_config.get("bodies", []))
+        print(f"DISCOVER: Scan {body_count} bodies from slice_bodies.yaml for new documents")
+    else:
+        print("DISCOVER: No slice_bodies.yaml found")
+
+    # Fetch
+    new_docs = db.fetch_one("SELECT COUNT(*) as cnt FROM documents WHERE status = 'new'")["cnt"]
+    print(f"FETCH: Download {new_docs} documents with status='new'")
+
+    # Extract
+    fetched_docs = db.fetch_one("SELECT COUNT(*) as cnt FROM documents WHERE status = 'fetched'")["cnt"]
+    print(f"EXTRACT: Extract text from {fetched_docs} fetched documents")
+
+    # Scan
+    extracted_docs = db.fetch_one("SELECT COUNT(*) as cnt FROM documents WHERE status = 'extracted'")["cnt"]
+    print(f"SCAN: Scan {extracted_docs} extracted documents for keywords")
+
+    # Classify
+    scanned_in_window = db.fetch_one(
+        "SELECT COUNT(*) as cnt FROM documents WHERE status = 'scanned' AND in_window = true"
+    )["cnt"]
+    today_cost = get_today_llm_cost()
+    remaining = max(0, config.LLM_DAILY_CAP - today_cost)
+    print(f"CLASSIFY: Classify {scanned_in_window} in_window documents")
+    print(f"          Today's LLM cost: ${today_cost:.4f}, daily cap: ${config.LLM_DAILY_CAP:.2f}, remaining: ${remaining:.4f}")
+
+    # Report
+    print(f"REPORT: Generate coverage.md, signals.csv, projects.csv, coverage_trend.csv, calibration.md")
+
+    print("\n--- No changes made (dry run) ---")
 
 
 def main():
@@ -448,13 +515,15 @@ def main():
     # classify command
     classify_parser = subparsers.add_parser("classify", help="Classify documents with LLM")
     classify_parser.add_argument("--all", action="store_true", help="Classify all scanned documents")
+    classify_parser.add_argument("--in-window", action="store_true", dest="in_window", help="Classify only in_window scanned documents")
     classify_parser.add_argument("--docs", help="Comma-separated list of document IDs to classify")
 
     # report command
     subparsers.add_parser("report", help="Generate reports")
 
     # run-all command
-    subparsers.add_parser("run-all", help="Run complete pipeline (discover, fetch, extract, scan, classify, report)")
+    run_all_parser = subparsers.add_parser("run-all", help="Run complete pipeline (discover, fetch, extract, scan, classify, report)")
+    run_all_parser.add_argument("--dry-run", action="store_true", dest="dry_run", help="Print what each step would do without executing")
 
     args = parser.parse_args()
 
