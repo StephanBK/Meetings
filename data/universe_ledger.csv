@@ -21,3 +21,4 @@ LI housing authorities,HUD PHA registry,24,exact from registry,yes,"no, ledger o
 "NYC city boards and commissions (CUNY trustees, Landmarks, City Planning, BSA, borough boards, 3 library systems)","NYC Green Book, not loaded",~40,estimate,no,yes,0,0,0,0,"Known to exist, registry not loaded yet"
 Bi-state (Port Authority of NY and NJ),"none, add by hand",1,exact,no,yes,0,0,0,0,
 "LI public colleges (Nassau CC, Suffolk CC, SUNY campuses)","SUNY campus list, not loaded",~6,estimate,no,"no, ledger only",0,0,0,0,
+National Counties/Municipalities/Townships,Census of Governments 2022 unit file,38640,exact from registry,yes,"no, ledger only",0,0,0,0.0,"16171 have websites (42%). All at level 0. Separate file: census_national_bodies.csv"
