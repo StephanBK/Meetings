@@ -21,3 +21,82 @@ bodies:
     pages:
       - https://www.wi.k12.ny.us/boe
     expected_meetings_per_year: 20
+
+  # Added from pilot_44 allowed hosts
+  - body_id: NCES-3600997
+    name: Academy Charter School
+    pages:
+      - https://academycharterschool.org/reports/
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3601169
+    name: Academy Charter School-Uniondale
+    pages:
+      - https://academycharterschool.org/reports/
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3605280
+    name: Brentwood Union Free School District
+    pages:
+      - https://www.bufsd.org/board-of-education/board-meetings
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3608010
+    name: Cold Spring Harbor Central School District
+    pages:
+      - https://www.csh.k12.ny.us/bo/boe-meeting-presentations
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3617400
+    name: Little Flower Union Free School District
+    pages:
+      - https://www.littleflowerufsd.org/board-of-education/board-meeting-minutes
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3619410
+    name: Miller Place Union Free School District
+    pages:
+      - https://www.millerplace.k12.ny.us/board-of-education/board-meeting-minutes
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3619710
+    name: Montauk Union Free School District
+    pages:
+      - http://www.montaukschool.org
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3620040
+    name: Mount Sinai Union Free School District
+    pages:
+      - https://www.mtsinai.k12.ny.us/56121_2
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3600060
+    name: Riverhead Charter School
+    pages:
+      - https://riverheadcharterschool.org/title-i-parent-meetings/
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3625050
+    name: Roslyn Union Free School District
+    pages:
+      - https://www.roslynschools.org/board-of-education/board-meeting-schedule
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3625410
+    name: Sagaponack Common School District
+    pages:
+      - https://sagaponackschool.org/school-board-meetings/
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3629760
+    name: Wainscott Common School District
+    pages:
+      - https://wainscottschool.org/minutes-and-agendas/
+    expected_meetings_per_year: 20
+
+  - body_id: NCES-3680860
+    name: Western Suffolk Boces
+    pages:
+      - https://www.wsboces.org/agendas-minutes/
+    expected_meetings_per_year: 20

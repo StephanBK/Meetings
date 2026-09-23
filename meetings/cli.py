@@ -209,11 +209,17 @@ def cmd_discover(args):
                 existing_count += 1
                 continue
 
-            # Insert new document
+            # Calculate in_window based on meeting_date
+            in_window = None
+            if doc.meeting_date:
+                window_start = date.today().replace(year=date.today().year - 1)
+                in_window = doc.meeting_date >= window_start
+
+            # Insert new document with meeting_date and in_window
             db.execute(
-                """INSERT INTO documents (body_id, doc_type, source_url, link_text, status)
-                   VALUES (%s, %s, %s, %s, 'new')""",
-                (body_id, doc.doc_type, doc.source_url, doc.link_text),
+                """INSERT INTO documents (body_id, doc_type, source_url, link_text, status, meeting_date, in_window)
+                   VALUES (%s, %s, %s, %s, 'new', %s, %s)""",
+                (body_id, doc.doc_type, doc.source_url, doc.link_text, doc.meeting_date, in_window),
                 commit=True
             )
 
