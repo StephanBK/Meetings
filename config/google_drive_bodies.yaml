@@ -1,0 +1,96 @@
+# Google Drive adapter configuration
+# These 16 bodies host meeting documents on Google Drive
+#
+# IMPORTANT: Document fetching requires GOOGLE_API_KEY environment variable
+# Folder URLs must be discovered by visiting board_page_url and finding Drive links
+#
+# To find folder URLs:
+# 1. Visit the board_page_url for each body
+# 2. Look for links to drive.google.com/drive/folders/...
+# 3. Add the folder URL to the folder_url field below
+
+bodies:
+  - body_id: NCES-3604740
+    name: Bethpage Union Free School District
+    board_page_url: https://www.bethpagecommunity.com/page/board-of-ed
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3605370
+    name: Bridgehampton Union Free School District
+    board_page_url: null
+    website: http://www.bridgehampton.k12.ny.us
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3608010
+    name: Cold Spring Harbor Central School District
+    board_page_url: https://www.csh.k12.ny.us/bo/boe-meeting-presentations
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3680820
+    name: Eastern Suffolk Boces
+    board_page_url: https://www.esboces.org/programs-services/ess/school-library-system/li
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3610980
+    name: Farmingdale Union Free School District
+    board_page_url: https://www.farmingdaleschools.org/boe-goals
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3612180
+    name: Glen Cove City School District
+    board_page_url: https://www.glencoveschools.org/board-of-education/boe-meeting-dates
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3613290
+    name: Half Hollow Hills Central School District
+    board_page_url: https://www.hhh.k12.ny.us/district/board-of-education
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3613980
+    name: Hauppauge Union Free School District
+    board_page_url: https://www.hauppauge.k12.ny.us/o/hufsd/page/about-the-board-of-educat
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3614280
+    name: Herricks Union Free School District
+    board_page_url: https://www.herricks.org/board-of-education/board-meeting-dates-and-livestream-links
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3617700
+    name: Locust Valley Central School District
+    board_page_url: null
+    website: http://www.locustvalleyschools.org
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3618630
+    name: Massapequa Union Free School District
+    board_page_url: https://www.msd.k12.ny.us/page/boe-meeting-live-stream
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3619710
+    name: Montauk Union Free School District
+    board_page_url: null
+    website: http://www.montaukschool.org
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3624420
+    name: Remsenburg-Speonk Union Free School District
+    board_page_url: https://www.rsufsd.org/boepolicies
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3625050
+    name: Roslyn Union Free School District
+    board_page_url: https://www.roslynschools.org/board-of-education/board-meeting-schedule
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3627300
+    name: South Huntington Union Free School District
+    board_page_url: null
+    website: http://www.shufsd.org
+    folder_url: null  # needs discovery
+
+  - body_id: NCES-3627620
+    name: Southold Union Free School District
+    board_page_url: null
+    website: http://www.southoldufsd.com
+    folder_url: null  # needs discovery
