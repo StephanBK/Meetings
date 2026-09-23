@@ -331,6 +331,95 @@ def generate_calibration_report() -> str:
     return "\n".join(lines)
 
 
+def generate_coverage_trend_csv() -> list[dict]:
+    """Generate coverage_trend.csv showing bodies at each level over time.
+
+    Each row represents a point in time when coverage changed,
+    with cumulative counts at each level.
+    """
+    # Get all coverage log entries ordered by time
+    logs = db.fetch_all("""
+        SELECT changed_at::date as change_date, body_id, old_level, new_level
+        FROM coverage_log
+        ORDER BY changed_at
+    """)
+
+    # Get current state as starting point
+    current_state = db.fetch_all("""
+        SELECT coverage_level, COUNT(*) as cnt
+        FROM bodies
+        GROUP BY coverage_level
+    """)
+
+    # Initialize level counts from current state
+    level_counts = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+    for row in current_state:
+        level = row["coverage_level"]
+        if level is not None:
+            level_counts[level] = row["cnt"]
+
+    # Reverse-apply the logs to get historical state
+    # Work backwards from current state
+    body_current_level = {}
+    for log in reversed(logs):
+        body_id = log["body_id"]
+        old_level = log["old_level"] or 0
+        new_level = log["new_level"] or 0
+
+        # Track body's current level in our reconstruction
+        if body_id not in body_current_level:
+            body_current_level[body_id] = new_level
+
+        # Move from new_level back to old_level
+        if new_level in level_counts:
+            level_counts[new_level] -= 1
+        if old_level not in level_counts:
+            level_counts[old_level] = 0
+        level_counts[old_level] += 1
+
+    # Now level_counts represents the state before all logs
+    # Generate forward timeline
+    rows = []
+
+    # Add initial state
+    rows.append({
+        "date": "initial",
+        "level_0": level_counts.get(0, 0),
+        "level_1": level_counts.get(1, 0),
+        "level_2": level_counts.get(2, 0),
+        "level_3": level_counts.get(3, 0),
+        "level_4": level_counts.get(4, 0),
+        "level_5": level_counts.get(5, 0),
+        "level_3_plus": level_counts.get(3, 0) + level_counts.get(4, 0) + level_counts.get(5, 0),
+    })
+
+    # Apply logs forward
+    for log in logs:
+        old_level = log["old_level"] or 0
+        new_level = log["new_level"] or 0
+        change_date = log["change_date"].isoformat() if log["change_date"] else "unknown"
+
+        # Update counts
+        if old_level in level_counts:
+            level_counts[old_level] -= 1
+        if new_level not in level_counts:
+            level_counts[new_level] = 0
+        level_counts[new_level] += 1
+
+        rows.append({
+            "date": change_date,
+            "level_0": level_counts.get(0, 0),
+            "level_1": level_counts.get(1, 0),
+            "level_2": level_counts.get(2, 0),
+            "level_3": level_counts.get(3, 0),
+            "level_4": level_counts.get(4, 0),
+            "level_5": level_counts.get(5, 0),
+            "level_3_plus": level_counts.get(3, 0) + level_counts.get(4, 0) + level_counts.get(5, 0),
+        })
+
+    return rows
+
+
 def generate_projects_csv() -> list[dict]:
     """Generate projects.csv data sorted by latest_stage then last_signal_date."""
     stage_order = {
@@ -403,6 +492,15 @@ def generate_all_reports():
             writer.writeheader()
             writer.writerows(projects_data)
 
+    print("Generating coverage_trend.csv...")
+    trend_data = generate_coverage_trend_csv()
+    if trend_data:
+        fieldnames = list(trend_data[0].keys())
+        with open(REPORTS_DIR / "coverage_trend.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(trend_data)
+
     print("Generating calibration.md...")
     calibration_content = generate_calibration_report()
     (REPORTS_DIR / "calibration.md").write_text(calibration_content)
@@ -416,4 +514,5 @@ def generate_all_reports():
     print(f"  coverage.md")
     print(f"  signals.csv ({len(signals_data)} signals: {in_window_signals} in_window, {out_of_window_signals} out_of_window)")
     print(f"  projects.csv ({len(projects_data)} projects)")
+    print(f"  coverage_trend.csv ({len(trend_data)} data points)")
     print(f"  calibration.md")
