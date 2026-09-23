@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS keyword_hits (
 CREATE TABLE IF NOT EXISTS signals (
     signal_id SERIAL PRIMARY KEY,
     document_id INTEGER NOT NULL REFERENCES documents(document_id),
+    project_id INTEGER REFERENCES projects(project_id),
     passage_index INTEGER,
     is_signal BOOLEAN NOT NULL,
     trades TEXT[],
@@ -84,6 +85,19 @@ CREATE TABLE IF NOT EXISTS signals (
     page_or_item TEXT,
     confidence NUMERIC,
     model TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- projects: grouped signals by building/scope
+CREATE TABLE IF NOT EXISTS projects (
+    project_id SERIAL PRIMARY KEY,
+    body_id TEXT NOT NULL REFERENCES bodies(body_id),
+    building TEXT,
+    scope_summary TEXT NOT NULL,
+    first_signal_date DATE,
+    last_signal_date DATE,
+    latest_stage TEXT,
+    signal_count INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -115,4 +129,6 @@ CREATE INDEX IF NOT EXISTS idx_meetings_body_id ON meetings(body_id);
 CREATE INDEX IF NOT EXISTS idx_meetings_date ON meetings(meeting_date);
 CREATE INDEX IF NOT EXISTS idx_keyword_hits_document_id ON keyword_hits(document_id);
 CREATE INDEX IF NOT EXISTS idx_signals_document_id ON signals(document_id);
+CREATE INDEX IF NOT EXISTS idx_signals_project_id ON signals(project_id);
+CREATE INDEX IF NOT EXISTS idx_projects_body_id ON projects(body_id);
 CREATE INDEX IF NOT EXISTS idx_coverage_log_body_id ON coverage_log(body_id);

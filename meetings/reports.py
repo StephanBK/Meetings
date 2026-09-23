@@ -331,6 +331,52 @@ def generate_calibration_report() -> str:
     return "\n".join(lines)
 
 
+def generate_projects_csv() -> list[dict]:
+    """Generate projects.csv data sorted by latest_stage then last_signal_date."""
+    stage_order = {
+        "1_needs": 1,
+        "2_planning": 2,
+        "3_funding": 3,
+        "4_design": 4,
+        "5_bid": 5,
+        "6_award": 6,
+        "7_construction": 7,
+        "8_closeout": 8,
+    }
+
+    rows = db.fetch_all("""
+        SELECT
+            p.project_id,
+            b.name as body,
+            b.body_id,
+            p.building,
+            p.scope_summary,
+            p.first_signal_date,
+            p.last_signal_date,
+            p.latest_stage,
+            p.signal_count
+        FROM projects p
+        JOIN bodies b ON p.body_id = b.body_id
+        ORDER BY p.latest_stage, p.last_signal_date DESC NULLS LAST
+    """)
+
+    csv_rows = []
+    for r in rows:
+        csv_rows.append({
+            "project_id": r["project_id"],
+            "body": r["body"],
+            "body_id": r["body_id"],
+            "building": r["building"] or "",
+            "scope_summary": r["scope_summary"] or "",
+            "first_signal_date": r["first_signal_date"].isoformat() if r["first_signal_date"] else "",
+            "last_signal_date": r["last_signal_date"].isoformat() if r["last_signal_date"] else "",
+            "latest_stage": r["latest_stage"] or "",
+            "signal_count": r["signal_count"],
+        })
+
+    return csv_rows
+
+
 def generate_all_reports():
     """Generate all reports to the reports/ directory."""
     REPORTS_DIR.mkdir(exist_ok=True)
@@ -348,6 +394,15 @@ def generate_all_reports():
             writer.writeheader()
             writer.writerows(signals_data)
 
+    print("Generating projects.csv...")
+    projects_data = generate_projects_csv()
+    if projects_data:
+        fieldnames = list(projects_data[0].keys())
+        with open(REPORTS_DIR / "projects.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(projects_data)
+
     print("Generating calibration.md...")
     calibration_content = generate_calibration_report()
     (REPORTS_DIR / "calibration.md").write_text(calibration_content)
@@ -360,4 +415,5 @@ def generate_all_reports():
     print(f"Reports written to {REPORTS_DIR}/")
     print(f"  coverage.md")
     print(f"  signals.csv ({len(signals_data)} signals: {in_window_signals} in_window, {out_of_window_signals} out_of_window)")
+    print(f"  projects.csv ({len(projects_data)} projects)")
     print(f"  calibration.md")
