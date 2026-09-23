@@ -31,6 +31,29 @@ https://claude.ai/code/artifact/d5639c5e-13c6-4d8d-b408-04fee9a0c9b6
 - Max 1 request per second per site
 - Never work around a bot challenge or a 403. Log it as a blocker code instead
 
+## Crawler policy
+
+### What we always do:
+- Set User-Agent to `MeetingsBot/0.1 (+https://github.com/StephanBK/Meetings)`
+- Respect robots.txt for every domain (checked before first request)
+- Honor Crawl-delay directives (from robots.txt or default 1 second)
+- Accept 403 responses as blockers, never retry or circumvent
+- Treat 5xx on robots.txt as "stay out entirely"
+
+### What we never do:
+- Bypass CAPTCHAs, bot challenges, or Cloudflare checks
+- Use headless browsers to defeat bot detection
+- Forge referrers, cookies, or headers to appear human
+- Ignore or override Disallow rules in robots.txt
+
+### Blocked hosts (never request, even with permission):
+| Host | Reason |
+|------|--------|
+| `go.boarddocs.com` | Returns 403 to all automated clients; no API available |
+| `files.smartsites.parentsquare.com` | CDN for ParentSquare; robots.txt disallows crawling |
+
+PDFs hosted on these domains are recorded as blocker code `PLATFORM_BLOCKS_BOTS` and excluded from fetch attempts.
+
 ## Run
 
     pip install -r requirements.txt
